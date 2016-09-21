@@ -1,18 +1,12 @@
-//
-//  MZBMKMapViewUtil.m
-//  HuiSongHuo-Owner
-//
-//  Created by liminzhou on 16/3/8.
-//  Copyright © 2016年 yujiuyin. All rights reserved.
-//
+
+/**
+ *  MZBMKMapViewUtil
+ */
 
 #import "MZBMKMapViewUtil.h"
 
 @implementation MZBMKMapViewUtil
-{
-    ///用于接收定位服务对象
-    BMKLocationService * _locationService;
-}
+
 #pragma mark - sharedInstance
 
 + (MZBMKMapViewUtil*)sharedInstance
@@ -27,13 +21,24 @@
     return sharedInstance;
 }
 
+#pragma mark - <<<<<<<<<<<<<<<<<<<< 百度地图 >>>>>>>>>>>>>>>>>>>>>>
++ (void)startBMKMapServices:(NSString *)appKey
+            generalDelegate:(id<BMKGeneralDelegate>)delegate{
+    
+    BMKMapManager*bmkManager = [[BMKMapManager alloc] init];
+    BOOL ret = [bmkManager start:appKey generalDelegate:nil];
+    if (!ret) {
+        NSLog(@"manager start failed!");
+    }
+}
+
 #pragma mark - 开始定位服务
 
-- (void)startLocationWithBMKLocationService:(BMKLocationService *)locationService WithCompletionBlock:(MZLocationBlock)locationBlock {
+- (void)startLocationWithCompletionBlock:(MZLocationBlock)locationBlock {
     self.locationBlock = locationBlock;
     /** 启动LocationService */
-    _locationService = locationService;
-    [locationService startUserLocationService];
+    [[MZEngineAbout sharedInstance].locationService startUserLocationService];
+    
 }
 
 //实现相关delegate 处理位置信息更新
@@ -41,7 +46,7 @@
 - (void)didUpdateUserHeading:(BMKUserLocation *)userLocation{
     //NSLog(@"heading is %@",userLocation.heading);
     self.locationBlock(userLocation);
-    [_locationService stopUserLocationService];
+    [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
     
 }
 
@@ -49,24 +54,34 @@
 - (void)didUpdateBMKUserLocation:(BMKUserLocation *)userLocation{
     
     self.locationBlock(userLocation);
-    [_locationService stopUserLocationService];
+    [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
     
 }
+/**
+ *在将要启动定位时，会调用此函数
+ */
+- (void)willStartLocatingUser {
+    NSLog(@"willStartLocatingUser");
+}
 
+/**
+ *在停止定位后，会调用此函数
+ */
+- (void)didStopLocatingUser {
+    NSLog(@"didStopLocatingUser");
+}
 #pragma mark - 开始正向地理编码（根据位置信息获取经纬度）
 
 //开始正向地理编码
-- (void)startGeoCodeWithAddressWithBMKGeoCodeSearchOption:(BMKGeoCodeSearchOption *)geoCodeSearchOption
-                                     withBMKGeoCodeSearch:(BMKGeoCodeSearch *)searcher
-                                              withAddress:(NSString *)address
-                                                  andCity:(NSString *)city
-                                       andCompletionBlock:(MZGeoCodeBlock)geoCodeBlock
+- (void)startGeoCodeWithAddress:(NSString *)address
+                        andCity:(NSString *)city
+             andCompletionBlock:(MZGeoCodeBlock)geoCodeBlock;
 {
     self.geoCodeBlock = geoCodeBlock;
     
-    geoCodeSearchOption.address = address;
-    geoCodeSearchOption.city = city;
-    BOOL flag = [searcher geoCode:geoCodeSearchOption];
+    [MZEngineAbout sharedInstance].geoCodeSearchOption.address = address;
+    [MZEngineAbout sharedInstance].geoCodeSearchOption.city = city;
+    BOOL flag = [[MZEngineAbout sharedInstance].geoCodeSearch geoCode:[MZEngineAbout sharedInstance].geoCodeSearchOption];
     if(flag)
     {
         NSLog(@"geo检索发送成功");
@@ -94,16 +109,14 @@
 #pragma mark - 开始反向地理编码（根据经纬度获取位置信息）
 //开始反向地理编码（用户定位到的经纬度，返回城市）
 - (void)startReverseGeoCodeWithUserLocation:(BMKUserLocation *)userLocation
-                withBMKReverseGeoCodeOption:(BMKReverseGeoCodeOption *)reverseGeoCodeSearchOption
-                       withBMKGeoCodeSearch:(BMKGeoCodeSearch *)searcher
                          andCompletionBlock:(MZReverseGeoCodeBlock)reverseGeoCodeBlock
 {
     self.reverseGeoCodeBlock = reverseGeoCodeBlock;
     NSLog(@"当前的坐标是: %f,%f",userLocation.location.coordinate.latitude,userLocation.location.coordinate.longitude);
     //发起反向地理编码检索
     CLLocationCoordinate2D pt = (CLLocationCoordinate2D){userLocation.location.coordinate.latitude, userLocation.location.coordinate.longitude};
-    reverseGeoCodeSearchOption.reverseGeoPoint = pt;
-    BOOL flag = [searcher reverseGeoCode:reverseGeoCodeSearchOption];
+    [MZEngineAbout sharedInstance].reverseGeoCodeSearchOption.reverseGeoPoint = pt;
+    BOOL flag = [[MZEngineAbout sharedInstance].geoCodeSearch reverseGeoCode:[MZEngineAbout sharedInstance].reverseGeoCodeSearchOption];
     if(flag)
     {
         NSLog(@"反geo检索发送成功");
@@ -116,15 +129,13 @@
 
 //开始反向地理编码（搜索的位置信息，根据经纬度定位到城市）
 - (void)startReverseGeoCodeWithSearchLocation:(CLLocationCoordinate2D)searchLocation
-                  withBMKReverseGeoCodeOption:(BMKReverseGeoCodeOption *)reverseGeoCodeSearchOption
-                         withBMKGeoCodeSearch:(BMKGeoCodeSearch *)searcher
                            andCompletionBlock:(MZReverseGeoCodeBlock)reverseGeoCodeBlock
 {
     
     self.reverseGeoCodeBlock = reverseGeoCodeBlock;
     
-    reverseGeoCodeSearchOption.reverseGeoPoint = searchLocation;
-    BOOL flag = [searcher reverseGeoCode:reverseGeoCodeSearchOption];
+    [MZEngineAbout sharedInstance].reverseGeoCodeSearchOption.reverseGeoPoint = searchLocation;
+    BOOL flag = [[MZEngineAbout sharedInstance].geoCodeSearch reverseGeoCode:[MZEngineAbout sharedInstance].reverseGeoCodeSearchOption];
     if(flag)
     {
         NSLog(@"反geo检索发送成功");
@@ -152,22 +163,20 @@
 #pragma mark - 开始POI检索（城市内、周边、矩形）
 // 开始城市内POI检索
 
-- (void)startPoiSearchWithBMKCitySearchOption:(BMKCitySearchOption *)citySearchOption
-                             withBMKPoiSearch:(BMKPoiSearch *)poisearch
-                                withPageIndex:(int)pageIndex
-                                 pageCapacity:(int)pageCapacity
-                                         city:(NSString *)city
-                                      keyword:(NSString *)keyword
-                          WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
+- (void)startPoiCitySearchWithPageIndex:(int)pageIndex
+                           pageCapacity:(int)pageCapacity
+                                   city:(NSString *)city
+                                keyword:(NSString *)keyword
+                    WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
 {
     
     self.poiSearchBlock = poiSearchBlock;
     //POI检索
-    citySearchOption.pageIndex = pageIndex;
-    citySearchOption.pageCapacity = pageCapacity;
-    citySearchOption.city = city;
-    citySearchOption.keyword = keyword;
-    BOOL flag = [poisearch poiSearchInCity:citySearchOption];
+    [MZEngineAbout sharedInstance].citySearchOption.pageIndex = pageIndex;
+    [MZEngineAbout sharedInstance].citySearchOption.pageCapacity = pageCapacity;
+    [MZEngineAbout sharedInstance].citySearchOption.city = city;
+    [MZEngineAbout sharedInstance].citySearchOption.keyword = keyword;
+    BOOL flag = [[MZEngineAbout sharedInstance].poiSearch poiSearchInCity:[MZEngineAbout sharedInstance].citySearchOption];
     if(flag)
     {
         NSLog(@"城市内检索发送成功");
@@ -180,27 +189,25 @@
 }
 
 //开始周边poi搜索
-- (void)startPoiSearchWithBMKNearbySearchOption:(BMKNearbySearchOption *)nearbySearchOption
-                               withBMKPoiSearch:(BMKPoiSearch *)poisearch
-                                  withPageIndex:(int)pageIndex
-                                   pageCapacity:(int)pageCapacity
-                                        keyword:(NSString *)keyword
-                                       location:(CLLocationCoordinate2D)location
-                                         radius:(int)radius
-                                       sortType:(BMKPoiSortType)sortType
-                            WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
+- (void)startPoiNearbySearchWithPageIndex:(int)pageIndex
+                             pageCapacity:(int)pageCapacity
+                                  keyword:(NSString *)keyword
+                                 location:(CLLocationCoordinate2D)location
+                                   radius:(int)radius
+                                 sortType:(BMKPoiSortType)sortType
+                      WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
 {
     
     self.poiSearchBlock = poiSearchBlock;
     
-    nearbySearchOption.pageIndex = pageIndex;
-    nearbySearchOption.pageCapacity = pageCapacity;
-    nearbySearchOption.keyword = keyword;
-    nearbySearchOption.location = location;
-    nearbySearchOption.radius = radius;
-    nearbySearchOption.sortType = sortType;
+    [MZEngineAbout sharedInstance].nearbySearchOption.pageIndex = pageIndex;
+    [MZEngineAbout sharedInstance].nearbySearchOption.pageCapacity = pageCapacity;
+    [MZEngineAbout sharedInstance].nearbySearchOption.keyword = keyword;
+    [MZEngineAbout sharedInstance].nearbySearchOption.location = location;
+    [MZEngineAbout sharedInstance].nearbySearchOption.radius = radius;
+    [MZEngineAbout sharedInstance].nearbySearchOption.sortType = sortType;
     
-    BOOL flag = [poisearch poiSearchNearBy:nearbySearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].poiSearch poiSearchNearBy:[MZEngineAbout sharedInstance].nearbySearchOption];
     if(flag)
     {
         NSLog(@"周边检索发送成功");
@@ -213,25 +220,23 @@
 }
 
 //开始矩形poi搜索
-- (void)startPoiSearchWithBMKBoundSearchOption:(BMKBoundSearchOption *)boundSearchOption
-                              withBMKPoiSearch:(BMKPoiSearch *)poisearch
-                                 withPageIndex:(int)pageIndex
-                                  pageCapacity:(int)pageCapacity
-                                       keyword:(NSString *)keyword
-                                    leftBottom:(CLLocationCoordinate2D)leftBottom
-                                      rightTop:(CLLocationCoordinate2D)rightTop
-                           WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
+- (void)startPoiBoundSearchWithPageIndex:(int)pageIndex
+                            pageCapacity:(int)pageCapacity
+                                 keyword:(NSString *)keyword
+                              leftBottom:(CLLocationCoordinate2D)leftBottom
+                                rightTop:(CLLocationCoordinate2D)rightTop
+                     WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
 {
     
     self.poiSearchBlock = poiSearchBlock;
     
-    boundSearchOption.pageIndex = pageIndex;
-    boundSearchOption.pageCapacity = pageCapacity;
-    boundSearchOption.keyword = keyword;
-    boundSearchOption.leftBottom = leftBottom;
-    boundSearchOption.rightTop = rightTop;
+    [MZEngineAbout sharedInstance].boundSearchOption.pageIndex = pageIndex;
+    [MZEngineAbout sharedInstance].boundSearchOption.pageCapacity = pageCapacity;
+    [MZEngineAbout sharedInstance].boundSearchOption.keyword = keyword;
+    [MZEngineAbout sharedInstance].boundSearchOption.leftBottom = leftBottom;
+    [MZEngineAbout sharedInstance].boundSearchOption.rightTop = rightTop;
     
-    BOOL flag = [poisearch poiSearchInbounds:boundSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].poiSearch poiSearchInbounds:[MZEngineAbout sharedInstance].boundSearchOption];
     if(flag)
     {
         NSLog(@"矩形检索发送成功");
@@ -264,19 +269,17 @@
 
 #pragma mark - 开始关键字联想搜索
 // 开始关键字联想搜索
-- (void)startKeywordSearchOfLenoveWithBMKSuggestionSearchOption:(BMKSuggestionSearchOption *)suggestionSearchOption
-                                        withBMKSuggestionSearch:(BMKSuggestionSearch *)suggestSearcher
-                                                   withCityName:(NSString *)cityName
-                                                    withKeyword:(NSString *)keyword
-                                            WithCompletionBlock:(MZKeyordLenoveSearchBlock)keywordLenoveSearchBlock
+- (void)startKeywordSearchOfLenoveWithCityName:(NSString *)cityName
+                                   withKeyword:(NSString *)keyword
+                           WithCompletionBlock:(MZKeyordLenoveSearchBlock)keywordLenoveSearchBlock
 
 {
     
     self.keywordLenoveSearchBlock = keywordLenoveSearchBlock;
     //关键字联想代码
-    suggestionSearchOption.cityname = cityName;
-    suggestionSearchOption.keyword  = keyword;
-    BOOL flag = [suggestSearcher suggestionSearch:suggestionSearchOption];
+    [MZEngineAbout sharedInstance].suggestSearchOption.cityname = cityName;
+    [MZEngineAbout sharedInstance].suggestSearchOption.keyword  = keyword;
+    BOOL flag = [[MZEngineAbout sharedInstance].suggestSearch suggestionSearch:[MZEngineAbout sharedInstance].suggestSearchOption];
     
     if(flag)
     {
@@ -305,35 +308,31 @@
 
 #pragma mark - 开始路径规划（驾车、公交、步行）
 //开始路径规划（驾车）
-- (void)startPlanningPathWithBMKDrivingRoutePlanOption:(BMKDrivingRoutePlanOption *)transitRouteSearchOption
-                                    WithBMKRouteSearch:(BMKRouteSearch *)searcher
-                                       withBMKPlanNode:(BMKPlanNode *)start
-                                       withBMKPlanNode:(BMKPlanNode *)end
-                                  withBMKDrivingPolicy:(BMKDrivingPolicy)drivingPolicy
-                                         withStartName:(NSString *)startName
-                                         withStartCity:(NSString *)startCityName
-                                        withStartPoint:(CLLocationCoordinate2D)startLocation
-                                           withEndName:(NSString *)endName
-                                       withEndCityName:(NSString *)endCityName
-                                          withEndPoint:(CLLocationCoordinate2D)EndLocation
-                                   WithCompletionBlock:(MZPlanDrivingPathBlock)planPathBlock
+- (void)startPlanningDrivingPathWithBMKDrivingPolicy:(BMKDrivingPolicy)drivingPolicy
+                                       withStartName:(NSString *)startName
+                                       withStartCity:(NSString *)startCityName
+                                      withStartPoint:(CLLocationCoordinate2D)startLocation
+                                         withEndName:(NSString *)endName
+                                     withEndCityName:(NSString *)endCityName
+                                        withEndPoint:(CLLocationCoordinate2D)EndLocation
+                                 WithCompletionBlock:(MZPlanDrivingPathBlock)planPathBlock
 
 {
     
     self.planDrivingPathBlock = planPathBlock;
     
-    start.name = startName;
-    start.cityName = startCityName;
-    start.pt = startLocation;
-    end.name = endName;
-    end.cityName = endCityName;
-    end.pt = EndLocation;
+    [MZEngineAbout sharedInstance].start.name = startName;
+    [MZEngineAbout sharedInstance].start.cityName = startCityName;
+    [MZEngineAbout sharedInstance].start.pt = startLocation;
+    [MZEngineAbout sharedInstance].end.name = endName;
+    [MZEngineAbout sharedInstance].end.cityName = endCityName;
+    [MZEngineAbout sharedInstance].end.pt = EndLocation;
     
-    transitRouteSearchOption.from = start;
-    transitRouteSearchOption.to = end;
-    transitRouteSearchOption.drivingPolicy = drivingPolicy;
+    [MZEngineAbout sharedInstance].drivingRouteSearchOption.from = [MZEngineAbout sharedInstance].start;
+    [MZEngineAbout sharedInstance].drivingRouteSearchOption.to = [MZEngineAbout sharedInstance].end;
+    [MZEngineAbout sharedInstance].drivingRouteSearchOption.drivingPolicy = drivingPolicy;
     
-    BOOL flag = [searcher drivingSearch:transitRouteSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].routeSearcher drivingSearch:[MZEngineAbout sharedInstance].drivingRouteSearchOption];
     
     if(flag)
     {
@@ -367,37 +366,33 @@
 
 
 //开始路径规划（公交）
-- (void)startPlanningPathWithBMKTransitRoutePlanOption:(BMKTransitRoutePlanOption *)transitRouteSearchOption
-                                    WithBMKRouteSearch:(BMKRouteSearch *)searcher
-                                       withBMKPlanNode:(BMKPlanNode *)start
-                                       withBMKPlanNode:(BMKPlanNode *)end
-                                  withBMKTransitPolicy:(BMKTransitPolicy)transitPolicy
-                                              withCity:(NSString *)city
-                                         withStartName:(NSString *)startName
-                                         withStartCity:(NSString *)startCityName
-                                        withStartPoint:(CLLocationCoordinate2D)startLocation
-                                           withEndName:(NSString *)endName
-                                       withEndCityName:(NSString *)endCityName
-                                          withEndPoint:(CLLocationCoordinate2D)EndLocation
-                                   WithCompletionBlock:(MZPlanTransitPathBlock)planPathBlock
+- (void)startPlanningTransitPathWithBMKTransitPolicy:(BMKTransitPolicy)transitPolicy
+                                            withCity:(NSString *)city
+                                       withStartName:(NSString *)startName
+                                       withStartCity:(NSString *)startCityName
+                                      withStartPoint:(CLLocationCoordinate2D)startLocation
+                                         withEndName:(NSString *)endName
+                                     withEndCityName:(NSString *)endCityName
+                                        withEndPoint:(CLLocationCoordinate2D)EndLocation
+                                 WithCompletionBlock:(MZPlanTransitPathBlock)planPathBlock
 {
     
     
     self.planTransitPathBlock = planPathBlock;
     
-    start.name = startName;
-    start.cityName = startCityName;
-    start.pt = startLocation;
-    end.name = endName;
-    end.cityName = endCityName;
-    end.pt = EndLocation;
+    [MZEngineAbout sharedInstance].start.name = startName;
+    [MZEngineAbout sharedInstance].start.cityName = startCityName;
+    [MZEngineAbout sharedInstance].start.pt = startLocation;
+    [MZEngineAbout sharedInstance].end.name = endName;
+    [MZEngineAbout sharedInstance].end.cityName = endCityName;
+    [MZEngineAbout sharedInstance].end.pt = EndLocation;
     
-    transitRouteSearchOption.from = start;
-    transitRouteSearchOption.to = end;
-    transitRouteSearchOption.city = city;
-    transitRouteSearchOption.transitPolicy = transitPolicy;
+    [MZEngineAbout sharedInstance].transitRouteSearchOption.from = [MZEngineAbout sharedInstance].start;
+    [MZEngineAbout sharedInstance].transitRouteSearchOption.to = [MZEngineAbout sharedInstance].end;
+    [MZEngineAbout sharedInstance].transitRouteSearchOption.city = city;
+    [MZEngineAbout sharedInstance].transitRouteSearchOption.transitPolicy = transitPolicy;
     
-    BOOL flag = [searcher transitSearch:transitRouteSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].routeSearcher transitSearch:[MZEngineAbout sharedInstance].transitRouteSearchOption];
     
     if(flag)
     {
@@ -425,32 +420,28 @@
 
 
 //开始路径规划（步行）
-- (void)startPlanningPathWithBMKWalkingRoutePlanOption:(BMKWalkingRoutePlanOption *)transitRouteSearchOption
-                                    WithBMKRouteSearch:(BMKRouteSearch *)searcher
-                                       withBMKPlanNode:(BMKPlanNode *)start
-                                       withBMKPlanNode:(BMKPlanNode *)end
-                                         withStartName:(NSString *)startName
-                                         withStartCity:(NSString *)startCityName
-                                        withStartPoint:(CLLocationCoordinate2D)startLocation
-                                           withEndName:(NSString *)endName
-                                       withEndCityName:(NSString *)endCityName
-                                          withEndPoint:(CLLocationCoordinate2D)EndLocation
-                                   WithCompletionBlock:(MZPlanWalkingPathBlock)planPathBlock
+- (void)startPlanningWalkingPathWithStartName:(NSString *)startName
+                                withStartCity:(NSString *)startCityName
+                               withStartPoint:(CLLocationCoordinate2D)startLocation
+                                  withEndName:(NSString *)endName
+                              withEndCityName:(NSString *)endCityName
+                                 withEndPoint:(CLLocationCoordinate2D)EndLocation
+                          WithCompletionBlock:(MZPlanWalkingPathBlock)planPathBlock
 {
     
     self.planWalkingPathBlock = planPathBlock;
     
-    start.name = startName;
-    start.cityName = startCityName;
-    start.pt = startLocation;
-    end.name = endName;
-    end.cityName = endCityName;
-    end.pt = EndLocation;
+    [MZEngineAbout sharedInstance].start.name = startName;
+    [MZEngineAbout sharedInstance].start.cityName = startCityName;
+    [MZEngineAbout sharedInstance].start.pt = startLocation;
+    [MZEngineAbout sharedInstance].end.name = endName;
+    [MZEngineAbout sharedInstance].end.cityName = endCityName;
+    [MZEngineAbout sharedInstance].end.pt = EndLocation;
     
-    transitRouteSearchOption.from = start;
-    transitRouteSearchOption.to = end;
+    [MZEngineAbout sharedInstance].walkingRouteSearchOption.from = [MZEngineAbout sharedInstance].start;
+    [MZEngineAbout sharedInstance].walkingRouteSearchOption.to = [MZEngineAbout sharedInstance].end;
     
-    BOOL flag = [searcher walkingSearch:transitRouteSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].routeSearcher walkingSearch:[MZEngineAbout sharedInstance].walkingRouteSearchOption];
     
     if(flag)
     {
@@ -476,16 +467,14 @@
 }
 
 #pragma mark - 开始POI详情检索
-- (void)startPoiDetailSearchWithBMKPoiDetailSearchOption:(BMKPoiDetailSearchOption *)poiDetailSearchOption
-                                      WithBMKRouteSearch:(BMKPoiSearch *)searcher
-                                              withPoiUid:(NSString *)poiUid
-                                     WithCompletionBlock:(MZPoiDetailSearchBlock)poiDetailSearchBlock{
+- (void)startPoiDetailSearchWithPoiUid:(NSString *)poiUid
+                   WithCompletionBlock:(MZPoiDetailSearchBlock)poiDetailSearchBlock{
     
     self.poiDetailSearchBlock = poiDetailSearchBlock;
     
-    poiDetailSearchOption.poiUid = poiUid;
+    [MZEngineAbout sharedInstance].poiDetailSearchOption.poiUid = poiUid;
     
-    BOOL flag = [searcher poiDetailSearch:poiDetailSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].poiSearch poiDetailSearch:[MZEngineAbout sharedInstance].poiDetailSearchOption];
     
     if(flag)
     {
@@ -510,20 +499,18 @@
 
 
 #pragma mark - 公交详情信息检索
-- (void)startBusDetailSearchWithBMKBusLineSearchOption:(BMKBusLineSearchOption *)busDetailSearchOption
-                                    WithBMKRouteSearch:(BMKBusLineSearch *)searcher
-                                        withBusLineUid:(NSString *)busLineUid
-                                              withCity:(NSString *)city
-                                   WithCompletionBlock:(MZBusLineDetailSearchBlock)busLineDetailSearchBlock
+- (void)startBusDetailSearchWithBusLineUid:(NSString *)busLineUid
+                                  withCity:(NSString *)city
+                       WithCompletionBlock:(MZBusLineDetailSearchBlock)busLineDetailSearchBlock
 {
     
     self.busLineDetailSearchBlock = busLineDetailSearchBlock;
     
     
-    busDetailSearchOption.busLineUid = busLineUid;
-    busDetailSearchOption.city = city;
+    [MZEngineAbout sharedInstance].busDetailSearchOption.busLineUid = busLineUid;
+    [MZEngineAbout sharedInstance].busDetailSearchOption.city = city;
     
-    BOOL flag = [searcher busLineSearch:busDetailSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].busLineSearcher busLineSearch:[MZEngineAbout sharedInstance].busDetailSearchOption];
     
     if(flag)
     {
@@ -552,20 +539,18 @@
 }
 
 #pragma mark - 行政区边界数据检索
-- (void)startDistrictSearchWithBMKDistrictSearchOption:(BMKDistrictSearchOption *)districtSearchOption
-                                    WithBMKRouteSearch:(BMKDistrictSearch *)searcher
-                                              withCity:(NSString *)city
-                                          withDistrict:(NSString *)district
-                                   WithCompletionBlock:(MZDistrictSearchBlock)districtSearchBlock
+- (void)startDistrictSearchWithCity:(NSString *)city
+                       withDistrict:(NSString *)district
+                WithCompletionBlock:(MZDistrictSearchBlock)districtSearchBlock
 {
     
     self.districtSearchBlock = districtSearchBlock;
     
-    districtSearchOption.city = city;
-    districtSearchOption.district = district;
+    [MZEngineAbout sharedInstance].districtSearchOption.city = city;
+    [MZEngineAbout sharedInstance].districtSearchOption.district = district;
     
     //发起检索
-    BOOL flag = [searcher districtSearch:districtSearchOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].districtSearcher districtSearch:[MZEngineAbout sharedInstance].districtSearchOption];
     
     if (flag) {
         NSLog(@"district检索发送成功");
@@ -586,18 +571,16 @@
 }
 
 #pragma mark - poi详情短串分享
-- (void)startPoiDetailShareOptionWithBMKPoiDetailShareURLOption:(BMKPoiDetailShareURLOption *)poiDetailShareOption
-                                             WithBMKRouteSearch:(BMKShareURLSearch *)searcher
-                                                        withUid:(NSString *)uid
-                                            WithCompletionBlock:(MZPoiDetailShareURLBlock)poiDetailShareURLBlock
+- (void)startPoiDetailShareOptionWithUid:(NSString *)uid
+                     WithCompletionBlock:(MZPoiDetailShareURLBlock)poiDetailShareURLBlock
 {
     
     self.poiDetailShareURLBlock = poiDetailShareURLBlock;
     
     //发起短串搜索获取poi分享url
-    poiDetailShareOption.uid = uid;
+    [MZEngineAbout sharedInstance].poiDetailShareOption.uid = uid;
     
-    BOOL flag = [searcher requestPoiDetailShareURL:poiDetailShareOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].shareURLSearcher requestPoiDetailShareURL:[MZEngineAbout sharedInstance].poiDetailShareOption];
     
     if(flag)
     {
@@ -624,21 +607,19 @@
 }
 
 #pragma mark - 发起位置信息分享
-- (void)startLocationShareURLOptionWithBMKPoiDetailShareURLOption:(BMKLocationShareURLOption *)locationShareURLOption
-                                               WithBMKRouteSearch:(BMKShareURLSearch *)searcher
-                                                      withSnippet:(NSString *)snippet
-                                                         withName:(NSString *)name
-                                                     withLocation:(CLLocationCoordinate2D)location
-                                              WithCompletionBlock:(MZLocationShareURLBlock)locationShareURLBlock
+- (void)startLocationShareURLOptionWithSnippet:(NSString *)snippet
+                                      withName:(NSString *)name
+                                  withLocation:(CLLocationCoordinate2D)location
+                           WithCompletionBlock:(MZLocationShareURLBlock)locationShareURLBlock
 {
     
     self.locationShareURLBlock = locationShareURLBlock;
     
     //发起位置信息分享URL检索
-    locationShareURLOption.snippet = snippet;
-    locationShareURLOption.name = name;
-    locationShareURLOption.location = location;
-    BOOL flag = [searcher requestLocationShareURL:locationShareURLOption];
+    [MZEngineAbout sharedInstance].locationShareURLOption.snippet = snippet;
+    [MZEngineAbout sharedInstance].locationShareURLOption.name = name;
+    [MZEngineAbout sharedInstance].locationShareURLOption.location = location;
+    BOOL flag = [[MZEngineAbout sharedInstance].shareURLSearcher requestLocationShareURL:[MZEngineAbout sharedInstance].locationShareURLOption];
     
     if(flag)
     {
@@ -657,7 +638,7 @@
     self.locationShareURLBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
-//        在此处理正常结果
+        //        在此处理正常结果
     }
     else {
         NSLog(@"抱歉，未找到结果");
@@ -665,38 +646,34 @@
 }
 
 #pragma mark - “公交/驾车/骑行/步行路线规“的划短串分享
-- (void)startRoutePlanShareURLOptionWithBMKPoiDetailShareURLOption:(BMKRoutePlanShareURLOption *)routePlanShareURLOption
-                                               WithBMKRouteSearch:(BMKShareURLSearch *)searcher
-                                                   withBMKPlanNode:(BMKPlanNode *)start
-                                                   withBMKPlanNode:(BMKPlanNode *)end
-                                                         withStartName:(NSString *)startName
-                                                       withStartCityID:(NSInteger)startCityID
-                                                     withEndName:(NSString *)endName
-                                                   withEndCityID:(NSInteger)endCityID
-                                                     withRoutePlanType:(BMKRoutePlanShareURLType)routePlanType
-                                                     withCityId:(NSUInteger)cityID
-                                                     withRouteIndex:(NSInteger)routeIndex
-                                              WithCompletionBlock:(MZRoutePlanShareURLBlock)routePlanShareURLBlock
+- (void)startRoutePlanShareURLOptionWithStartName:(NSString *)startName
+                                  withStartCityID:(NSInteger)startCityID
+                                      withEndName:(NSString *)endName
+                                    withEndCityID:(NSInteger)endCityID
+                                withRoutePlanType:(BMKRoutePlanShareURLType)routePlanType
+                                       withCityId:(NSUInteger)cityID
+                                   withRouteIndex:(NSInteger)routeIndex
+                              WithCompletionBlock:(MZRoutePlanShareURLBlock)routePlanShareURLBlock
 {
     
     self.routePlanShareURLBlock = routePlanShareURLBlock;
     
     //起点
-    start.name = startName;
-    start.cityID = startCityID;
-    routePlanShareURLOption.from = start;
+    [MZEngineAbout sharedInstance].start.name = startName;
+    [MZEngineAbout sharedInstance].start.cityID = startCityID;
+    [MZEngineAbout sharedInstance].routePlanShareURLOption.from = [MZEngineAbout sharedInstance].start;
     
     //终点
-    end.name = endName;
-    end.cityID = endCityID;
-    routePlanShareURLOption.to = end;
+    [MZEngineAbout sharedInstance].end.name = endName;
+    [MZEngineAbout sharedInstance].end.cityID = endCityID;
+    [MZEngineAbout sharedInstance].routePlanShareURLOption.to = [MZEngineAbout sharedInstance].end;
     
-    routePlanShareURLOption.routePlanType = routePlanType;
-    routePlanShareURLOption.cityID = cityID;//当进行公交路线规划短串分享且起终点通过关键字指定时，必须指定
-    routePlanShareURLOption.routeIndex = routeIndex;//公交路线规划短串分享时使用，分享的是第几条线路
+    [MZEngineAbout sharedInstance].routePlanShareURLOption.routePlanType = routePlanType;
+    [MZEngineAbout sharedInstance].routePlanShareURLOption.cityID = cityID;//当进行公交路线规划短串分享且起终点通过关键字指定时，必须指定
+    [MZEngineAbout sharedInstance].routePlanShareURLOption.routeIndex = routeIndex;//公交路线规划短串分享时使用，分享的是第几条线路
     
     //发起检索
-    BOOL flag = [searcher requestRoutePlanShareURL:routePlanShareURLOption];
+    BOOL flag = [[MZEngineAbout sharedInstance].shareURLSearcher requestRoutePlanShareURL:[MZEngineAbout sharedInstance].routePlanShareURLOption];
     
     if (flag) {
         NSLog(@"routePlanShortUrlShare检索发送成功");
@@ -707,18 +684,18 @@
 }
 
 - (void)onGetRoutePlanShareURLResult:(BMKShareURLSearch *)searcher result:(BMKShareURLResult *)result errorCode:(BMKSearchErrorCode)error {
-
+    
     self.routePlanShareURLBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
-
+        
     }
 }
 
 
 
 #pragma mark - 获取两点之间的直线距离
-- (float)getLineDistanceBetweenMapPoints:(CLLocationCoordinate2D)startPointLocation
++ (float)getLineDistanceBetweenMapPoints:(CLLocationCoordinate2D)startPointLocation
                         endPointLocation:(CLLocationCoordinate2D)endPointLocation{
     BMKMapPoint point1 = BMKMapPointForCoordinate(startPointLocation);
     BMKMapPoint point2 = BMKMapPointForCoordinate(endPointLocation);
@@ -727,8 +704,11 @@
 }
 
 #pragma mark - 传入地图标注数组，确定地图显示范围
-- (void)setMapViewZoomLevelWithAnnotions:(BMKMapView *)mapView
++ (void)setMapViewZoomLevelWithAnnotions:(BMKMapView *)mapView
                           annotionsArray:(NSMutableArray *)annotionsArray{
+    if (annotionsArray.count == 0) {
+        return;
+    }
     if (annotionsArray.count <= 1) {
         BMKPointAnnotation * tempAnn = annotionsArray[0];
         [mapView setCenterCoordinate:tempAnn.coordinate animated:NO];
@@ -745,7 +725,7 @@
     for (int i = 1; i<annotionsArray.count; i++) {
         BMKPointAnnotation * tempAnnotion = annotionsArray[i];
         BMKMapPoint tempPt = BMKMapPointForCoordinate(tempAnnotion.coordinate);
-
+        
         if (tempPt.x < ltX) {
             ltX = tempPt.x;
         }
@@ -762,11 +742,11 @@
     BMKMapRect rect = BMKMapRectMake(ltX, ltY, rbX - ltX, rbY - ltY);
     mapView.visibleMapRect = rect;
     mapView.zoomLevel = mapView.zoomLevel - 0.3;
-
+    
 }
 
 #pragma mark - 根据polyline设置地图范围
-- (void)mapViewFitPolyLine:(BMKMapView *)mapView
++ (void)mapViewFitPolyLine:(BMKMapView *)mapView
                   polyLine:(BMKPolyline *)polyLine{
     CGFloat ltX, ltY, rbX, rbY;
     if (polyLine.pointCount < 1) {
@@ -798,22 +778,103 @@
 }
 
 #pragma mark - 隐藏百度地图logo
-- (void)hideMapViewLogoWithMapView:(BMKMapView *)mapView{
++ (void)hideMapViewLogoWithMapView:(BMKMapView *)mapView{
     //移除百度地图logo
     for (UIView * tempView in mapView.subviews[0].subviews) {
         if ([tempView isKindOfClass:[UIImageView class]]) {
             [tempView removeFromSuperview];
         }
     }
-
+    
 }
 
 #pragma mark - 判断当前定位服务是否开启
-- (BOOL)currentLocationServiceIsAvailable{
-    if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusDenied) {
++ (BOOL)currentLocationServiceIsAvailable{
+    if (![CLLocationManager locationServicesEnabled] || [CLLocationManager authorizationStatus] == kCLAuthorizationStatusDenied) {
         return NO;
     }
     return YES;
+}
+
+
+
+#pragma mark - <<<<<<<<<<<<<<<<<<<< 百度导航 >>>>>>>>>>>>>>>>>>>>>>
++ (void)startBNNavServices:(NSString *)appKey{
+    //初始化导航SDK
+    [BNCoreServices_Instance initServices:appKey];
+    [BNCoreServices_Instance startServicesAsyn:^{
+        NSLog(@"导航启动成功");
+    } fail:^{
+        NSLog(@"导航启动失败");
+    }];
+}
+
+//发起导航
+- (void)startNavFrom:(CLLocationCoordinate2D)startLocation to:(CLLocationCoordinate2D)endLocation
+{
+    [[MZEngineAbout sharedInstance].nodesArray removeAllObjects];
+    //起点
+    [MZEngineAbout sharedInstance].startNode.pos   = [MZEngineAbout sharedInstance].startPosition;
+    [MZEngineAbout sharedInstance].startNode.pos.x     = startLocation.latitude;
+    [MZEngineAbout sharedInstance].startNode.pos.y     = startLocation.longitude;
+    [MZEngineAbout sharedInstance].startNode.pos.eType = BNCoordinate_BaiduMapSDK;
+    //终点
+    [MZEngineAbout sharedInstance].endNode.pos     = [MZEngineAbout sharedInstance].endPosition;
+    [MZEngineAbout sharedInstance].endNode.pos.x       = endLocation.latitude;
+    [MZEngineAbout sharedInstance].endNode.pos.y       = endLocation.longitude;
+    [MZEngineAbout sharedInstance].endNode.pos.eType   = BNCoordinate_BaiduMapSDK;
+    //发起路径规划
+    [BNCoreServices_RoutePlan startNaviRoutePlan:BNRoutePlanMode_Recommend naviNodes:[MZEngineAbout sharedInstance].nodesArray time:nil delegete:self userInfo:nil];
+}
+
+#pragma mark - BNNaviRoutePlanDelegate
+-(void)routePlanDidFinished:(NSDictionary *)userInfo
+{
+    NSLog(@"算路成功");
+    if ([[BNCoreServices GetInstance] isServicesInited]) {
+        [BNCoreServices_UI showNaviUI: BN_NaviTypeReal delegete:self isNeedLandscape:YES];
+    }else{
+        NSLog(@"百度导航引擎初始化失败");
+    }
+}
+
+- (void)setDayNightType:(BNDayNight_CFG_Type)dayNightType{
+    dayNightType = BNDayNight_CFG_Type_Day;
+}
+
+- (void)setSpeakMode:(BN_Speak_Mode_Enum)speakMode{
+    speakMode = BN_Speak_Mode_High;
+}
+
+- (void)routePlanDidFailedWithError:(NSError *)error andUserInfo:(NSDictionary *)userInfo
+{
+    NSLog(@"算路失败");
+    [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
+    if ([error code] == BNRoutePlanError_LocationFailed) {
+        NSLog(@"获取地理位置失败");
+    }
+    else if ([error code] == BNRoutePlanError_LocationServiceClosed)
+    {
+        NSLog(@"定位服务未开启");
+    }
+}
+
+-(void)routePlanDidUserCanceled:(NSDictionary*)userInfo {
+    NSLog(@"算路取消");
+}
+
+-(void)onExitNaviUI:(NSDictionary*)extraInfo
+{
+    NSLog(@"退出导航声明页面");
+    [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
+    [[BNCoreServices GetInstance] stopServices];
+}
+
+- (void)onExitDeclarationUI:(NSDictionary*)extraInfo
+{
+    NSLog(@"退出导航声明页面");
+    [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
+    [[BNCoreServices GetInstance] stopServices];
 }
 
 @end
