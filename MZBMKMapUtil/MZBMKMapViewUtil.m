@@ -35,7 +35,7 @@
 #pragma mark - 开始定位服务
 
 - (void)startLocationWithCompletionBlock:(MZLocationBlock)locationBlock {
-    self.locationBlock = locationBlock;
+    [MZEngineAbout sharedInstance].locationBlock = locationBlock;
     /** 启动LocationService */
     [[MZEngineAbout sharedInstance].locationService startUserLocationService];
     
@@ -45,7 +45,7 @@
 //处理方向变更信息
 - (void)didUpdateUserHeading:(BMKUserLocation *)userLocation{
     //NSLog(@"heading is %@",userLocation.heading);
-    self.locationBlock(userLocation);
+    [MZEngineAbout sharedInstance].locationBlock(userLocation);
     [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
     
 }
@@ -53,7 +53,7 @@
 //处理位置坐标更新
 - (void)didUpdateBMKUserLocation:(BMKUserLocation *)userLocation{
     
-    self.locationBlock(userLocation);
+    [MZEngineAbout sharedInstance].locationBlock(userLocation);
     [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
     
 }
@@ -77,7 +77,7 @@
                         andCity:(NSString *)city
              andCompletionBlock:(MZGeoCodeBlock)geoCodeBlock;
 {
-    self.geoCodeBlock = geoCodeBlock;
+    [MZEngineAbout sharedInstance].geoCodeBlock = geoCodeBlock;
     
     [MZEngineAbout sharedInstance].geoCodeSearchOption.address = address;
     [MZEngineAbout sharedInstance].geoCodeSearchOption.city = city;
@@ -96,7 +96,7 @@
 // 接收正向编码结果
 - (void)onGetGeoCodeResult:(BMKGeoCodeSearch *)searcher result:(BMKGeoCodeResult *)result errorCode:(BMKSearchErrorCode)error {
     
-    self.geoCodeBlock(result,error);
+    [MZEngineAbout sharedInstance].geoCodeBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在此处理正常结果
@@ -111,7 +111,7 @@
 - (void)startReverseGeoCodeWithUserLocation:(BMKUserLocation *)userLocation
                          andCompletionBlock:(MZReverseGeoCodeBlock)reverseGeoCodeBlock
 {
-    self.reverseGeoCodeBlock = reverseGeoCodeBlock;
+    [MZEngineAbout sharedInstance].reverseGeoCodeBlock = reverseGeoCodeBlock;
     NSLog(@"当前的坐标是: %f,%f",userLocation.location.coordinate.latitude,userLocation.location.coordinate.longitude);
     //发起反向地理编码检索
     CLLocationCoordinate2D pt = (CLLocationCoordinate2D){userLocation.location.coordinate.latitude, userLocation.location.coordinate.longitude};
@@ -132,7 +132,7 @@
                            andCompletionBlock:(MZReverseGeoCodeBlock)reverseGeoCodeBlock
 {
     
-    self.reverseGeoCodeBlock = reverseGeoCodeBlock;
+    [MZEngineAbout sharedInstance].reverseGeoCodeBlock = reverseGeoCodeBlock;
     
     [MZEngineAbout sharedInstance].reverseGeoCodeSearchOption.reverseGeoPoint = searchLocation;
     BOOL flag = [[MZEngineAbout sharedInstance].geoCodeSearch reverseGeoCode:[MZEngineAbout sharedInstance].reverseGeoCodeSearchOption];
@@ -150,7 +150,7 @@
 //接收反向地理编码结果
 -(void) onGetReverseGeoCodeResult:(BMKGeoCodeSearch *)searcher result:(BMKReverseGeoCodeResult *)result errorCode:(BMKSearchErrorCode)error {
     
-    self.reverseGeoCodeBlock(result,error);
+    [MZEngineAbout sharedInstance].reverseGeoCodeBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在此处理正常结果
@@ -170,7 +170,7 @@
                     WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
 {
     
-    self.poiSearchBlock = poiSearchBlock;
+    [MZEngineAbout sharedInstance].poiSearchBlock = poiSearchBlock;
     //POI检索
     [MZEngineAbout sharedInstance].citySearchOption.pageIndex = pageIndex;
     [MZEngineAbout sharedInstance].citySearchOption.pageCapacity = pageCapacity;
@@ -198,7 +198,7 @@
                       WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
 {
     
-    self.poiSearchBlock = poiSearchBlock;
+    [MZEngineAbout sharedInstance].poiSearchBlock = poiSearchBlock;
     
     [MZEngineAbout sharedInstance].nearbySearchOption.pageIndex = pageIndex;
     [MZEngineAbout sharedInstance].nearbySearchOption.pageCapacity = pageCapacity;
@@ -228,7 +228,7 @@
                      WithCompletionBlock:(MZPoiSearchBlock)poiSearchBlock
 {
     
-    self.poiSearchBlock = poiSearchBlock;
+    [MZEngineAbout sharedInstance].poiSearchBlock = poiSearchBlock;
     
     [MZEngineAbout sharedInstance].boundSearchOption.pageIndex = pageIndex;
     [MZEngineAbout sharedInstance].boundSearchOption.pageCapacity = pageCapacity;
@@ -254,7 +254,7 @@
 - (void)onGetPoiResult:(BMKPoiSearch *)searcher result:(BMKPoiResult*)result errorCode:(BMKSearchErrorCode)error
 {
     
-    self.poiSearchBlock(result,error);
+    [MZEngineAbout sharedInstance].poiSearchBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在这里处理正常结果
@@ -275,7 +275,7 @@
 
 {
     
-    self.keywordLenoveSearchBlock = keywordLenoveSearchBlock;
+    [MZEngineAbout sharedInstance].keywordLenoveSearchBlock = keywordLenoveSearchBlock;
     //关键字联想代码
     [MZEngineAbout sharedInstance].suggestSearchOption.cityname = cityName;
     [MZEngineAbout sharedInstance].suggestSearchOption.keyword  = keyword;
@@ -295,7 +295,7 @@
 //关键字联想代理方法
 - (void)onGetSuggestionResult:(BMKSuggestionSearch *)searcher result:(BMKSuggestionResult *)result errorCode:(BMKSearchErrorCode)error{
     
-    self.keywordLenoveSearchBlock(result,error);
+    [MZEngineAbout sharedInstance].keywordLenoveSearchBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在此处理正常结果
@@ -319,7 +319,7 @@
 
 {
     
-    self.planDrivingPathBlock = planPathBlock;
+    [MZEngineAbout sharedInstance].planDrivingPathBlock = planPathBlock;
     
     [MZEngineAbout sharedInstance].start.name = startName;
     [MZEngineAbout sharedInstance].start.cityName = startCityName;
@@ -348,7 +348,7 @@
 //获取路径规划得到的信息(驾车)
 -(void)onGetDrivingRouteResult:(BMKRouteSearch*)searcher result:(BMKDrivingRouteResult*)result errorCode:(BMKSearchErrorCode)error
 {
-    self.planDrivingPathBlock(result,error);
+    [MZEngineAbout sharedInstance].planDrivingPathBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在此处理正常结果
@@ -378,7 +378,7 @@
 {
     
     
-    self.planTransitPathBlock = planPathBlock;
+    [MZEngineAbout sharedInstance].planTransitPathBlock = planPathBlock;
     
     [MZEngineAbout sharedInstance].start.name = startName;
     [MZEngineAbout sharedInstance].start.cityName = startCityName;
@@ -409,7 +409,7 @@
 - (void)onGetTransitRouteResult:(BMKRouteSearch*)searcher result:(BMKTransitRouteResult*)result errorCode:(BMKSearchErrorCode)error
 {
     
-    self.planTransitPathBlock(result,error);
+    [MZEngineAbout sharedInstance].planTransitPathBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         
@@ -429,7 +429,7 @@
                           WithCompletionBlock:(MZPlanWalkingPathBlock)planPathBlock
 {
     
-    self.planWalkingPathBlock = planPathBlock;
+    [MZEngineAbout sharedInstance].planWalkingPathBlock = planPathBlock;
     
     [MZEngineAbout sharedInstance].start.name = startName;
     [MZEngineAbout sharedInstance].start.cityName = startCityName;
@@ -457,7 +457,7 @@
 
 - (void)onGetWalkingRouteResult:(BMKRouteSearch *)searcher result:(BMKWalkingRouteResult *)result errorCode:(BMKSearchErrorCode)error{
     
-    self.planWalkingPathBlock(result,error);
+    [MZEngineAbout sharedInstance].planWalkingPathBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         
@@ -470,7 +470,7 @@
 - (void)startPoiDetailSearchWithPoiUid:(NSString *)poiUid
                    WithCompletionBlock:(MZPoiDetailSearchBlock)poiDetailSearchBlock{
     
-    self.poiDetailSearchBlock = poiDetailSearchBlock;
+    [MZEngineAbout sharedInstance].poiDetailSearchBlock = poiDetailSearchBlock;
     
     [MZEngineAbout sharedInstance].poiDetailSearchOption.poiUid = poiUid;
     
@@ -490,7 +490,7 @@
 //代理监听检索结果
 -(void)onGetPoiDetailResult:(BMKPoiSearch *)searcher result:(BMKPoiDetailResult *)poiDetailResult errorCode:(BMKSearchErrorCode)errorCode{
     
-    self.poiDetailSearchBlock(poiDetailResult,errorCode);
+    [MZEngineAbout sharedInstance].poiDetailSearchBlock(poiDetailResult,errorCode);
     
     if(errorCode == BMK_SEARCH_NO_ERROR){
         //在此处理正常结果
@@ -504,7 +504,7 @@
                        WithCompletionBlock:(MZBusLineDetailSearchBlock)busLineDetailSearchBlock
 {
     
-    self.busLineDetailSearchBlock = busLineDetailSearchBlock;
+    [MZEngineAbout sharedInstance].busLineDetailSearchBlock = busLineDetailSearchBlock;
     
     
     [MZEngineAbout sharedInstance].busDetailSearchOption.busLineUid = busLineUid;
@@ -528,7 +528,7 @@
 - (void)onGetBusDetailResult:(BMKBusLineSearch*)searcher result:(BMKBusLineResult*)busLineResult errorCode:(BMKSearchErrorCode)error
 {
     
-    self.busLineDetailSearchBlock(busLineResult,error);
+    [MZEngineAbout sharedInstance].busLineDetailSearchBlock(busLineResult,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在此处理正常结果
@@ -544,7 +544,7 @@
                 WithCompletionBlock:(MZDistrictSearchBlock)districtSearchBlock
 {
     
-    self.districtSearchBlock = districtSearchBlock;
+    [MZEngineAbout sharedInstance].districtSearchBlock = districtSearchBlock;
     
     [MZEngineAbout sharedInstance].districtSearchOption.city = city;
     [MZEngineAbout sharedInstance].districtSearchOption.district = district;
@@ -563,7 +563,7 @@
 
 - (void)onGetDistrictResult:(BMKDistrictSearch *)searcher result:(BMKDistrictResult *)result errorCode:(BMKSearchErrorCode)error {
     
-    self.districtSearchBlock(result,error);
+    [MZEngineAbout sharedInstance].districtSearchBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //code
@@ -575,7 +575,7 @@
                      WithCompletionBlock:(MZPoiDetailShareURLBlock)poiDetailShareURLBlock
 {
     
-    self.poiDetailShareURLBlock = poiDetailShareURLBlock;
+    [MZEngineAbout sharedInstance].poiDetailShareURLBlock = poiDetailShareURLBlock;
     
     //发起短串搜索获取poi分享url
     [MZEngineAbout sharedInstance].poiDetailShareOption.uid = uid;
@@ -596,7 +596,7 @@
 //处理Poi详情分享URL结果
 - (void)onGetPoiDetailShareUrlResult:(BMKShareURLSearch *)searcher result:(BMKShareURLResult *)result errorCode:(BMKSearchErrorCode)error{
     
-    self.poiDetailShareURLBlock(result,error);
+    [MZEngineAbout sharedInstance].poiDetailShareURLBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //在此处理正常结果
@@ -613,7 +613,7 @@
                            WithCompletionBlock:(MZLocationShareURLBlock)locationShareURLBlock
 {
     
-    self.locationShareURLBlock = locationShareURLBlock;
+    [MZEngineAbout sharedInstance].locationShareURLBlock = locationShareURLBlock;
     
     //发起位置信息分享URL检索
     [MZEngineAbout sharedInstance].locationShareURLOption.snippet = snippet;
@@ -635,7 +635,7 @@
 //处理位置信息你分享了URL结果
 - (void)onGetLocationShareUrlResult:(BMKShareURLSearch *)searcher result:(BMKShareURLResult *)result errorCode:(BMKSearchErrorCode)error{
     
-    self.locationShareURLBlock(result,error);
+    [MZEngineAbout sharedInstance].locationShareURLBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         //        在此处理正常结果
@@ -656,7 +656,7 @@
                               WithCompletionBlock:(MZRoutePlanShareURLBlock)routePlanShareURLBlock
 {
     
-    self.routePlanShareURLBlock = routePlanShareURLBlock;
+    [MZEngineAbout sharedInstance].routePlanShareURLBlock = routePlanShareURLBlock;
     
     //起点
     [MZEngineAbout sharedInstance].start.name = startName;
@@ -685,7 +685,7 @@
 
 - (void)onGetRoutePlanShareURLResult:(BMKShareURLSearch *)searcher result:(BMKShareURLResult *)result errorCode:(BMKSearchErrorCode)error {
     
-    self.routePlanShareURLBlock(result,error);
+    [MZEngineAbout sharedInstance].routePlanShareURLBlock(result,error);
     
     if (error == BMK_SEARCH_NO_ERROR) {
         
@@ -875,6 +875,65 @@
     NSLog(@"退出导航声明页面");
     [[[MZEngineAbout sharedInstance] locationService] stopUserLocationService];
     [[BNCoreServices GetInstance] stopServices];
+}
+
+
+
+#pragma mark - <<<<<<<<<<<<<<<<<<<< 离线地图（下载，更新，暂停，移除） >>>>>>>>>>>>>>>>>>>>>>
+- (void)startDownloadOfflineMapWithCityID:(int)cityID
+                      withCompletionBlock:(MZOfflineMapDownloadBlock)offlineMapDownloadBlock{
+    BOOL success =[[MZEngineAbout sharedInstance].offlineMap start:cityID];
+    if (success) {
+        [MZEngineAbout sharedInstance].offlineMapDownloadBlock = offlineMapDownloadBlock;
+    }else{
+        [MZEngineAbout sharedInstance].offlineMapDownloadBlock = nil;
+    }
+}
+- (void)startUpdateOfflineMapWithCityID:(int)cityID
+                    withCompletionBlock:(MZOfflineMapDownloadBlock)offlineMapDownloadBlock{
+    BOOL success = [[MZEngineAbout sharedInstance].offlineMap update:cityID];
+    if (success) {
+        [MZEngineAbout sharedInstance].offlineMapDownloadBlock = offlineMapDownloadBlock;
+    }else{
+        [MZEngineAbout sharedInstance].offlineMapDownloadBlock = nil;
+    }
+}
+- (BOOL)startPauseOfflineMapWithCityID:(int)cityID{
+    return [[MZEngineAbout sharedInstance].offlineMap pause:cityID];
+}
+- (BOOL)startRemoveOfflineMapWithCityID:(int)cityID{
+    return [[MZEngineAbout sharedInstance].offlineMap remove:cityID];
+}
+
++ (NSArray*)getHotCityList{
+    return [[MZEngineAbout sharedInstance].offlineMap getHotCityList];
+}
+
++ (NSArray*)getOfflineCityList{
+    return [[MZEngineAbout sharedInstance].offlineMap getOfflineCityList];
+}
+
++ (NSArray*)searchCity:(NSString*)cityName{
+    return [[MZEngineAbout sharedInstance].offlineMap searchCity:cityName];
+}
+
++ (NSArray*)getAllUpdateInfo{
+    return [[MZEngineAbout sharedInstance].offlineMap getAllUpdateInfo];
+}
+
++ (BMKOLUpdateElement*)getUpdateInfo:(int)cityID{
+    return [[MZEngineAbout sharedInstance].offlineMap getUpdateInfo:cityID];
+}
+
+//离线地图代理，及时更新下载状态
+- (void)onGetOfflineMapState:(int)type withState:(int)state{
+    BMKOLUpdateElement *updateInfo;
+    if (type == TYPE_OFFLINE_UPDATE) {
+        updateInfo = [MZBMKMapViewUtil getUpdateInfo:state];
+        if (updateInfo) {
+            [MZEngineAbout sharedInstance].offlineMapDownloadBlock(type,state,updateInfo);
+        }
+    }
 }
 
 @end

@@ -15,40 +15,6 @@
 #import "BNCoreServices.h"
 #import "MZEngineAbout.h"
 
-///定位信息block
-typedef void (^MZLocationBlock)(BMKUserLocation *userLocation);
-///正向编码block
-typedef void (^MZGeoCodeBlock)(BMKGeoCodeResult *result,BMKSearchErrorCode errorCode);
-///反向编码block
-typedef void (^MZReverseGeoCodeBlock)(BMKReverseGeoCodeResult *result,BMKSearchErrorCode errorCode);
-///POI检索block
-typedef void (^MZPoiSearchBlock)(BMKPoiResult *result,BMKSearchErrorCode errorCode);
-///关键字联想搜索block
-typedef void (^MZKeyordLenoveSearchBlock)(BMKSuggestionResult *result,BMKSearchErrorCode errorCode);
-
-///路径规划block(驾车)
-typedef void (^MZPlanDrivingPathBlock)(BMKDrivingRouteResult *result,BMKSearchErrorCode erroeCode);
-///路径规划block(公交)
-typedef void (^MZPlanTransitPathBlock)(BMKTransitRouteResult *result,BMKSearchErrorCode erroeCode);
-///路径规划block(步行)
-typedef void (^MZPlanWalkingPathBlock)(BMKWalkingRouteResult *result,BMKSearchErrorCode erroeCode);
-
-///POI详情检索block
-typedef void (^MZPoiDetailSearchBlock)(BMKPoiDetailResult *result,BMKSearchErrorCode errorCode);
-///公交详情检索block
-typedef void (^MZBusLineDetailSearchBlock)(BMKBusLineResult *result,BMKSearchErrorCode errorCode);
-
-///行政区边界数据检索block
-typedef void (^MZDistrictSearchBlock)(BMKDistrictResult *result,BMKSearchErrorCode errorCode);
-
-///poi详情短串分享block
-typedef void (^MZPoiDetailShareURLBlock)(BMKShareURLResult *result,BMKSearchErrorCode errorCode);
-///发起位置信息分享block
-typedef void (^MZLocationShareURLBlock)(BMKShareURLResult *result,BMKSearchErrorCode errorCode);
-///“公交/驾车/骑行/步行路线规“的划短串分享block
-typedef void (^MZRoutePlanShareURLBlock)(BMKShareURLResult *result,BMKSearchErrorCode errorCode);
-
-
 
 
 
@@ -64,7 +30,9 @@ BMKBusLineSearchDelegate,
 BMKDistrictSearchDelegate,
 BMKShareURLSearchDelegate,
 BNNaviUIManagerDelegate,
-BNNaviRoutePlanDelegate
+BNNaviRoutePlanDelegate,
+BMKGeneralDelegate,
+BMKOfflineMapDelegate
 >
 
 
@@ -73,30 +41,6 @@ BNNaviRoutePlanDelegate
 
 #pragma mark - <<<<<<<<<<<<<<<<<<<< 百度地图 >>>>>>>>>>>>>>>>>>>>>>
 
-#pragma mark - resultBlock
-//回调block
-@property (nonatomic, copy ) MZLocationBlock            locationBlock;
-@property (nonatomic, copy ) MZGeoCodeBlock             geoCodeBlock;
-@property (nonatomic, copy ) MZReverseGeoCodeBlock      reverseGeoCodeBlock;
-@property (nonatomic, copy ) MZPoiSearchBlock           poiSearchBlock;
-@property (nonatomic, copy ) MZKeyordLenoveSearchBlock  keywordLenoveSearchBlock;
-
-//路径规划
-@property (nonatomic, copy ) MZPlanDrivingPathBlock     planDrivingPathBlock;
-@property (nonatomic, copy ) MZPlanTransitPathBlock     planTransitPathBlock;
-@property (nonatomic, copy ) MZPlanWalkingPathBlock     planWalkingPathBlock;
-
-//详情
-@property (nonatomic,copy  ) MZPoiDetailSearchBlock     poiDetailSearchBlock;
-@property (nonatomic,copy  ) MZBusLineDetailSearchBlock busLineDetailSearchBlock;
-
-//行政区边界数据
-@property (nonatomic,copy  ) MZDistrictSearchBlock      districtSearchBlock;
-
-//短串分享
-@property (nonatomic,copy  ) MZPoiDetailShareURLBlock   poiDetailShareURLBlock;
-@property (nonatomic,copy  ) MZLocationShareURLBlock    locationShareURLBlock;
-@property (nonatomic,copy  ) MZRoutePlanShareURLBlock   routePlanShareURLBlock;
 
 #pragma mark - Engine
 
@@ -407,6 +351,81 @@ BNNaviRoutePlanDelegate
  *  @param endLocation   终点经纬度
  */
 - (void)startNavFrom:(CLLocationCoordinate2D)startLocation to:(CLLocationCoordinate2D)endLocation;
+
+
+
+
+#pragma mark - <<<<<<<<<<<<<<<<<<<< 离线地图 >>>>>>>>>>>>>>>>>>>>>>
+
+
+/**
+ 开始下载离线地图
+
+ @param cityID                  cityID
+ @param offlineMapDownloadBlock 离线地图下载的及时状态
+ */
+- (void)startDownloadOfflineMapWithCityID:(int)cityID
+                      withCompletionBlock:(MZOfflineMapDownloadBlock)offlineMapDownloadBlock;
+
+/**
+ 开始暂停下载离线地图
+
+ @param cityID cityID
+
+ @return 返回暂停是否成功
+ */
+- (BOOL)startPauseOfflineMapWithCityID:(int)cityID;
+
+/**
+ 开始删除离线地图
+ 
+ @param cityID cityID
+ 
+ @return 返回删除是否成功
+ */
+- (BOOL)startRemoveOfflineMapWithCityID:(int)cityID;
+
+/**
+ 开始更新离线地图
+ 
+ @param cityID                  cityID
+ @param offlineMapDownloadBlock 离线地图更新的及时状态
+ */
+
+- (void)startUpdateOfflineMapWithCityID:(int)cityID
+                    withCompletionBlock:(MZOfflineMapDownloadBlock)offlineMapDownloadBlock;
+
+/**
+ *返回热门城市列表
+ *@return 热门城市列表,用户需要显示释放该数组，数组元素为BMKOLSearchRecord
+ */
++ (NSArray*)getHotCityList;
+
+/**
+ *返回所有支持离线地图的城市列表
+ *@return 支持离线地图的城市列表,用户需要显示释放该数组，数组元素为BMKOLSearchRecord
+ */
++ (NSArray*)getOfflineCityList;
+
+/**
+ *根据城市名搜索该城市离线地图记录
+ *@param cityName 城市名
+ *@return 该城市离线地图记录,用户需要显示释放该数组，数组元素为BMKOLSearchRecord
+ */
++ (NSArray*)searchCity:(NSString*)cityName;
+
+/**
+ *返回各城市离线地图更新信息
+ *@return 各城市离线地图更新信息,用户需要显示释放该数组，数组元素为BMKOLUpdateElement
+ */
++ (NSArray*)getAllUpdateInfo;
+
+/**
+ *返回指定城市id离线地图更新信息
+ *@param cityID 指定的城市id
+ *@return 指定城市id离线地图更新信息
+ */
++ (BMKOLUpdateElement*)getUpdateInfo:(int)cityID;
 
 @end
 

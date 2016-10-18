@@ -185,6 +185,13 @@
     return _routePlanShareURLOption;
 }
 
+- (BMKOfflineMap *)offlineMap{
+    if (!_offlineMap) {
+        _offlineMap = [[BMKOfflineMap alloc] init];
+    }
+    return _offlineMap;
+}
+
 #pragma mark - addEngineDelegate
 - (void)addLocationServiceDelegate{
     if (self.locationService) {
@@ -242,9 +249,17 @@
         }
     }
 }
+- (void)addOfflineMapDelegate{
+    if (self.offlineMap) {
+        if (!_offlineMap.delegate) {
+            _offlineMap.delegate = [MZBMKMapViewUtil sharedInstance];
+        }
+    }
+}
+
 
 #pragma mark - removeEngineDelegate
-- (void)removeEngineDelegate{
+- (void)removeAllEngineDelegate{
     if (_locationService) {
         _locationService.delegate  = nil;
     }
@@ -269,11 +284,114 @@
     if (_shareURLSearcher) {
         _shareURLSearcher.delegate = nil;
     }
-    
+    if (_offlineMap) {
+        _offlineMap.delegate = nil;
+    }
+
 }
 
+- (void)removeLocationServiceDelegate{
+    if (_locationService) {
+        _locationService.delegate  = nil;
+    }
+    if (_locationBlock) {
+        _locationBlock             = nil;
+    }
+}
+
+- (void)removeGeoCodeSearchDelegate{
+    if (_geoCodeSearch) {
+        _geoCodeSearch.delegate    = nil;
+    }
+    if (_geoCodeBlock) {
+        _geoCodeBlock              = nil;
+    }
+    if (_reverseGeoCodeBlock) {
+        _reverseGeoCodeBlock       = nil;
+    }
+}
+
+- (void)removePoiSearchDelegate{
+    if (_poiSearch) {
+        _poiSearch.delegate        = nil;
+    }
+    if (_poiSearchBlock) {
+        _poiSearchBlock            = nil;
+    }
+    if (_poiDetailSearchBlock) {
+        _poiDetailSearchBlock      = nil;
+    }
+}
+
+- (void)removeSuggestSearchDelegate{
+    if (_suggestSearch) {
+        _suggestSearch.delegate    = nil;
+    }
+    if (_keywordLenoveSearchBlock) {
+        _keywordLenoveSearchBlock  = nil;
+    }
+}
+
+- (void)removeRouteSearcherDelegate{
+    if (_routeSearcher) {
+        _routeSearcher.delegate    = nil;
+    }
+    if (_planDrivingPathBlock) {
+        _planDrivingPathBlock      = nil;
+    }
+    if (_planTransitPathBlock) {
+        _planTransitPathBlock      = nil;
+    }
+    if (_planWalkingPathBlock) {
+        _planWalkingPathBlock      = nil;
+    }
+}
+
+- (void)removeBusLineSearcherDelegate{
+    if (_busLineSearcher) {
+        _busLineSearcher.delegate  = nil;
+    }
+    if (_busLineDetailSearchBlock) {
+        _busLineDetailSearchBlock  = nil;
+    }
+}
+
+- (void)removeDistrictSearcherDelegate{
+    if (_districtSearcher) {
+        _districtSearcher.delegate = nil;
+    }
+    if (_districtSearchBlock) {
+        _districtSearchBlock       = nil;
+    }
+}
+
+- (void)removeShareURLSearcherDelegate{
+    if (_shareURLSearcher) {
+        _shareURLSearcher.delegate = nil;
+    }
+    if (_locationShareURLBlock) {
+        _locationShareURLBlock     = nil;
+    }
+    if (_routePlanShareURLBlock) {
+        _routePlanShareURLBlock    = nil;
+    }
+    if (_poiDetailShareURLBlock) {
+        _poiDetailShareURLBlock    = nil;
+    }
+}
+
+- (void)removeOfflineMapDelegate{
+    if (_offlineMap) {
+        _offlineMap.delegate       = nil;
+    }
+    if (_offlineMapDownloadBlock) {
+        _offlineMapDownloadBlock   = nil;
+    }
+}
+
+
 #pragma mark - removeEngine
-- (void)removeEngine{
+- (void)removeAllEngine{
     if (_locationService) {
         _locationService            = nil;
     }
@@ -349,8 +467,122 @@
     if (_suggestSearch) {
         _suggestSearch              = nil;
     }
-    
+    if (_offlineMap) {
+        _offlineMap                 = nil;
+    }
 }
+
+- (void)removeLocationServiceEngine{
+    if (_locationService) {
+        _locationService            = nil;
+    }
+}
+
+- (void)removeGeoCodeSearchEngine{
+    if (_reverseGeoCodeSearchOption) {
+        _reverseGeoCodeSearchOption = nil;
+    }
+    if (_geoCodeSearchOption) {
+        _geoCodeSearchOption        = nil;
+    }
+    if (_geoCodeSearch) {
+        _geoCodeSearch              = nil;
+    }
+}
+
+- (void)removePoiSearchEngine{
+    if (_poiSearch) {
+        _poiSearch                  = nil;
+    }
+    if (_citySearchOption) {
+        _citySearchOption           = nil;
+    }
+    if (_nearbySearchOption) {
+        _nearbySearchOption         = nil;
+    }
+    if (_boundSearchOption) {
+        _boundSearchOption          = nil;
+    }
+    if (_poiDetailSearchOption) {
+        _poiDetailSearchOption      = nil;
+    }
+}
+
+- (void)removeSuggestSearchEngine{
+    if (_suggestSearchOption) {
+        _suggestSearchOption        = nil;
+    }
+    if (_suggestSearch) {
+        _suggestSearch              = nil;
+    }
+}
+
+- (void)removeRouteSearcherEngine{
+    if (_routeSearcher) {
+        _routeSearcher              = nil;
+    }
+    if (_start) {
+        _start                      = nil;
+    }
+    if (_end) {
+        _end                        = nil;
+    }
+    if (_drivingRouteSearchOption) {
+        _drivingRouteSearchOption   = nil;
+    }
+    if (_transitRouteSearchOption) {
+        _transitRouteSearchOption   = nil;
+    }
+    if (_walkingRouteSearchOption) {
+        _walkingRouteSearchOption   = nil;
+    }
+}
+
+- (void)removeBusLineSearcherEngine{
+    if (_busDetailSearchOption) {
+        _busDetailSearchOption      = nil;
+    }
+    if (_busLineSearcher) {
+        _busLineSearcher            = nil;
+    }
+}
+
+- (void)removeDistrictSearcherEngine{
+    if (_districtSearchOption) {
+        _districtSearchOption       = nil;
+    }
+    if (_districtSearcher) {
+        _districtSearcher           = nil;
+    }
+}
+
+- (void)removeShareURLSearcherEngine{
+    if (_shareURLSearcher) {
+        _shareURLSearcher           = nil;
+    }
+    if (_start) {
+        _start                      = nil;
+    }
+    if (_end) {
+        _end                        = nil;
+    }
+    if (_poiDetailShareOption) {
+        _poiDetailShareOption       = nil;
+    }
+    if (_locationShareURLOption) {
+        _locationShareURLOption     = nil;
+    }
+    if (_routePlanShareURLOption) {
+        _routePlanShareURLOption    = nil;
+    }
+}
+
+- (void)removeOfflineMapEngine{
+    if (_offlineMap) {
+        _offlineMap                 = nil;
+    }
+}
+
 
 #pragma mark  ---------------------------------百度导航---------------------------------
 #pragma mark - getter
